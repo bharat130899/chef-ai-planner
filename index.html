@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChefAI - AI Cooking To-Do List & Meal Planner</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- CSS -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon"><i class="fa-solid fa-utensils"></i></div>
+        <div>
+          <h1>ChefAI</h1>
+          <p class="tagline">Personalized Cooking To-Do Lists & Budget Planner</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="themeToggleBtn" class="action-btn" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button id="settingsBtn" class="action-btn" title="API Configuration">
+          <i class="fa-solid fa-sliders"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="app-main">
+      <!-- Input Panel (Left Column) -->
+      <section class="panel input-panel">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Customize Your Day</h2>
+          <p>Tell ChefAI about your routine to generate a tailored cooking schedule.</p>
+        </div>
+
+        <form id="plannerForm" class="planner-form">
+          <!-- Textarea for daily routine -->
+          <div class="form-group">
+            <label for="routineInput">What does your day look like?</label>
+            <textarea id="routineInput" placeholder="e.g., I have a busy office day, returning home late around 7 PM. I need something quick for dinner but want a high-protein lunch after my morning workout." required></textarea>
+            <div class="textarea-suggestions">
+              <span class="suggestion-tag">Busy workday</span>
+              <span class="suggestion-tag">Post-workout</span>
+              <span class="suggestion-tag">Lazy Sunday</span>
+            </div>
+          </div>
+
+          <!-- Select/Multi-select for Dietary Constraints -->
+          <div class="form-group">
+            <label>Dietary Focus</label>
+            <div class="diet-options">
+              <input type="radio" id="dietNone" name="dietPreference" value="No restrictions" checked>
+              <label for="dietNone" class="diet-label">
+                <i class="fa-solid fa-globe"></i> Any
+              </label>
+
+              <input type="radio" id="dietVeg" name="dietPreference" value="Vegetarian">
+              <label for="dietVeg" class="diet-label">
+                <i class="fa-solid fa-leaf"></i> Veg
+              </label>
+
+              <input type="radio" id="dietVegan" name="dietPreference" value="Vegan">
+              <label for="dietVegan" class="diet-label">
+                <i class="fa-solid fa-seedling"></i> Vegan
+              </label>
+
+              <input type="radio" id="dietKeto" name="dietPreference" value="Keto/Low-carb">
+              <label for="dietKeto" class="diet-label">
+                <i class="fa-solid fa-egg"></i> Keto
+              </label>
+
+              <input type="radio" id="dietGlutenFree" name="dietPreference" value="Gluten-Free">
+              <label for="dietGlutenFree" class="diet-label">
+                <i class="fa-solid fa-wheat-awn-slash"></i> Gluten-Free
+              </label>
+            </div>
+          </div>
+
+          <!-- Currency & Budget Selection -->
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label for="currencySelect">Currency</label>
+              <select id="currencySelect">
+                <option value="USD">$ USD</option>
+                <option value="INR">₹ INR</option>
+                <option value="EUR">€ EUR</option>
+              </select>
+            </div>
+            <div class="form-group col-8">
+              <label for="budgetInput">Daily Budget Limit</label>
+              <div class="budget-input-wrapper">
+                <input type="number" id="budgetInput" value="25" min="1" step="1" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Generate Button -->
+          <button type="submit" id="generateBtn" class="primary-btn">
+            <span>Generate Cook List</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+
+        <!-- API Config Modal/Panel (Collapsible) -->
+        <div id="apiConfigPanel" class="api-config-panel hidden">
+          <h3><i class="fa-solid fa-key"></i> Gemini API Key (Optional)</h3>
+          <p>Enter your Gemini API key to enable live AI generation. If left blank, ChefAI uses a highly intelligent local heuristic engine.</p>
+          <div class="api-key-input-row">
+            <input type="password" id="apiKeyInput" placeholder="Enter Gemini API Key...">
+            <button id="saveApiKeyBtn" class="secondary-btn">Save</button>
+          </div>
+          <span class="api-status-badge inactive" id="apiStatus"><i class="fa-solid fa-circle"></i> Local Mode</span>
+        </div>
+      </section>
+
+      <!-- Output Panel (Right Column) -->
+      <section class="panel output-panel">
+        <!-- Placeholder View (Initial State) -->
+        <div id="outputPlaceholder" class="output-placeholder">
+          <div class="placeholder-icon">
+            <i class="fa-solid fa-kitchen-set"></i>
+          </div>
+          <h3>Your Culinary Dashboard</h3>
+          <p>Fill out the profile on the left and click "Generate Cook List" to create your tailored meals, grocery checklists, and budget diagnostics.</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="outputLoader" class="output-loader hidden">
+          <div class="chef-hat-loader">
+            <i class="fa-solid fa-utensils spinning"></i>
+          </div>
+          <h3>Consulting ChefAI...</h3>
+          <p id="loadingQuote">Chopping vegetables...</p>
+        </div>
+
+        <!-- Results View (Hidden Initially) -->
+        <div id="outputResults" class="output-results hidden">
+          <!-- Navigation Tabs -->
+          <nav class="results-tabs">
+            <button class="tab-btn active" data-tab="meals-tab">
+              <i class="fa-solid fa-calendar-day"></i> Meals
+            </button>
+            <button class="tab-btn" data-tab="groceries-tab">
+              <i class="fa-solid fa-clipboard-list"></i> Groceries
+            </button>
+            <button class="tab-btn" data-tab="swaps-tab">
+              <i class="fa-solid fa-arrows-rotate"></i> Substitutions
+            </button>
+            <button class="tab-btn" data-tab="budget-tab">
+              <i class="fa-solid fa-chart-pie"></i> Budget Inspector
+            </button>
+          </nav>
+
+          <!-- Tab Contents -->
+          <div class="tab-content-wrapper">
+            <!-- 1. Meals Tab -->
+            <div id="meals-tab" class="tab-content active">
+              <div class="meals-header">
+                <h3>Today's Cooking Schedule</h3>
+                <span class="meal-meta" id="mealRoutineSummary">Custom Plan</span>
+              </div>
+              <div class="meals-grid" id="mealsGrid">
+                <!-- Breakfast Card -->
+                <div class="meal-card breakfast">
+                  <div class="meal-badge"><i class="fa-solid fa-cloud-sun"></i> Breakfast</div>
+                  <h4 id="breakfastTitle">Oatmeal Bowl</h4>
+                  <div class="meal-stats">
+                    <span><i class="fa-regular fa-clock"></i> <span id="breakfastTime">10m</span></span>
+                    <span><i class="fa-solid fa-fire"></i> <span id="breakfastCalories">350 kcal</span></span>
+                  </div>
+                  <div class="meal-body">
+                    <h5>Ingredients Needed:</h5>
+                    <ul id="breakfastIngredients">
+                      <li>Oats, banana, milk, honey</li>
+                    </ul>
+                    <details>
+                      <summary>Step-by-step Instructions</summary>
+                      <ol id="breakfastSteps">
+                        <li>Boil milk and oats.</li>
+                        <li>Top with sliced banana and honey.</li>
+                      </ol>
+                    </details>
+                  </div>
+                </div>
+
+                <!-- Lunch Card -->
+                <div class="meal-card lunch">
+                  <div class="meal-badge"><i class="fa-solid fa-sun"></i> Lunch</div>
+                  <h4 id="lunchTitle">Chicken Salad</h4>
+                  <div class="meal-stats">
+                    <span><i class="fa-regular fa-clock"></i> <span id="lunchTime">20m</span></span>
+                    <span><i class="fa-solid fa-fire"></i> <span id="lunchCalories">550 kcal</span></span>
+                  </div>
+                  <div class="meal-body">
+                    <h5>Ingredients Needed:</h5>
+                    <ul id="lunchIngredients">
+                      <li>Chicken breast, lettuce, dressing</li>
+                    </ul>
+                    <details>
+                      <summary>Step-by-step Instructions</summary>
+                      <ol id="lunchSteps">
+                        <li>Grill chicken.</li>
+                        <li>Toss with vegetables and dressing.</li>
+                      </ol>
+                    </details>
+                  </div>
+                </div>
+
+                <!-- Dinner Card -->
+                <div class="meal-card dinner">
+                  <div class="meal-badge"><i class="fa-solid fa-moon"></i> Dinner</div>
+                  <h4 id="dinnerTitle">Garlic Salmon</h4>
+                  <div class="meal-stats">
+                    <span><i class="fa-regular fa-clock"></i> <span id="dinnerTime">25m</span></span>
+                    <span><i class="fa-solid fa-fire"></i> <span id="dinnerCalories">620 kcal</span></span>
+                  </div>
+                  <div class="meal-body">
+                    <h5>Ingredients Needed:</h5>
+                    <ul id="dinnerIngredients">
+                      <li>Salmon fillet, garlic, asparagus</li>
+                    </ul>
+                    <details>
+                      <summary>Step-by-step Instructions</summary>
+                      <ol id="dinnerSteps">
+                        <li>Pan-sear salmon.</li>
+                        <li>Roast asparagus with garlic.</li>
+                      </ol>
+                    </details>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Groceries Tab -->
+            <div id="groceries-tab" class="tab-content">
+              <div class="groceries-header">
+                <h3>Smart Grocery List</h3>
+                <p>Cross off items as you shop or prepare them. Grouped by category.</p>
+              </div>
+              <div class="groceries-container" id="groceriesList">
+                <!-- Categories will be rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- 3. Swaps Tab -->
+            <div id="swaps-tab" class="tab-content">
+              <div class="swaps-header">
+                <h3>Healthy & Smart Substitutions</h3>
+                <p>Allergen alerts, diet adjustments, or cost-saving swaps.</p>
+              </div>
+              <div class="swaps-list" id="swapsGrid">
+                <!-- Swaps will be rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- 4. Budget Tab -->
+            <div id="budget-tab" class="tab-content">
+              <div class="budget-header">
+                <h3>Budget Feasibility Analysis</h3>
+                <p>A cost inspection of your grocery list compared to your goal.</p>
+              </div>
+              <div class="budget-dashboard">
+                <div class="budget-progress-container">
+                  <div class="budget-gauge-wrapper">
+                    <svg class="budget-gauge" viewBox="0 0 100 100">
+                      <circle class="bg" cx="50" cy="50" r="45"></circle>
+                      <circle class="meter" id="budgetGaugeMeter" cx="50" cy="50" r="45" stroke-dasharray="283" stroke-dashoffset="283"></circle>
+                    </svg>
+                    <div class="gauge-text">
+                      <span class="value" id="budgetValue">0%</span>
+                      <span class="label">Spent</span>
+                    </div>
+                  </div>
+                  <div class="budget-legend">
+                    <div class="legend-item">
+                      <span class="label">Your Budget:</span>
+                      <span class="val" id="summaryTargetBudget">$0.00</span>
+                    </div>
+                    <div class="legend-item">
+                      <span class="label">Est. Grocery Cost:</span>
+                      <span class="val" id="summaryEstCost">$0.00</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="budgetStatusAlert" class="budget-status-alert">
+                  <i class="fa-solid fa-circle-check"></i>
+                  <div>
+                    <h4>Within Budget Limit</h4>
+                    <p>Good job! Your recipes are wallet-friendly and align with your constraints.</p>
+                  </div>
+                </div>
+
+                <div class="budget-tips">
+                  <h4><i class="fa-solid fa-lightbulb text-warning"></i> AI Cost-Cutting Suggestions</h4>
+                  <ul id="budgetTipsList">
+                    <li>Buy generic brands for pantry staples.</li>
+                    <li>Prep in bulk to minimize waste.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>&copy; 2026 ChefAI. Built for GenAI Promptwars Warm Up Challenge.</p>
+    </footer>
+  </div>
+
+  <!-- JS -->
+  <script src="./app.js"></script>
+</body>
+</html>
